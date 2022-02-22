@@ -1,8 +1,8 @@
-from base.base_tabular_methods import BaseTabularEnvrioment
+from base.base_envrioment import BaseEnvrioment
 import random
 import itertools
 
-class RandomDiscreteWalk( BaseTabularEnvrioment ):
+class RandomDiscreteWalk( BaseEnvrioment ):
   def initialize(self):
     self._position = 2 # Starts on 'C'
     self._reach_terminal = False
@@ -50,7 +50,7 @@ class RandomDiscreteWalk( BaseTabularEnvrioment ):
 
     return 0
 
-class WindyGridWorld(BaseTabularEnvrioment):
+class WindyGridWorld(BaseEnvrioment):
   def initialize(self):
     self._player_position = self._start_point
     self._player_in_game = True
