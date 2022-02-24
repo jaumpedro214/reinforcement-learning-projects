@@ -9,7 +9,7 @@ class BaseTabularMethod(ABC):
     Parameters
     ----------
     envrioment : Object that inherits from BaseEnvrioment
-      Numerical ID relative to the action
+      Envrioment from where the method learns
     discount : float, default=1
       Discount factor for future rewards, should be in the interval [0, 1]
     """

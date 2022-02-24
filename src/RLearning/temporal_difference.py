@@ -1,4 +1,4 @@
-from base.base_tabular_methods import BaseTabularMethod
+from RLearning.base.base_tabular_methods import BaseTabularMethod
 import numpy as np
 
 class SARSA(BaseTabularMethod):

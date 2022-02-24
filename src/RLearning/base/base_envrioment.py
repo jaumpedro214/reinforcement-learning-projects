@@ -2,32 +2,39 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class BaseEnvrioment(ABC):
-  """Base Envrioment class"""
+  """
+  Base Envrioment class
+  """
   def __init__(self):
     self.initialize_states()
     self.initialize_actions()
 
   @abstractmethod
   def initialize(self):
-    """Initialize the envrioment variables to simulate a new episode"""
+    """
+    Initialize the envrioment variables to simulate a new episode
+    """
     pass
 
   @abstractmethod
   def initialize_states(self):
-    """If tabular, initialize all possible states
-       If approximated, initialize envrioment's feature construction
+    """
+    If tabular, initialize all possible states
+    If approximated, initialize envrioment's feature construction
     """
     pass
 
   @abstractmethod
   def initialize_actions(self):
-    """Initialize all possible actions
+    """
+    Initialize all possible actions
     """
     pass
 
   @abstractmethod
   def state(self):
-    """Return the current state
+    """
+    Return the current state
     """
     pass
 

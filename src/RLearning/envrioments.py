@@ -1,8 +1,9 @@
-from base.base_envrioment import BaseEnvrioment
+from RLearning.base.base_envrioment import BaseEnvrioment
 import random
 import itertools
+import numpy as np
 
-class RandomDiscreteWalk( BaseEnvrioment ):
+class RandomDiscreteWalk(BaseEnvrioment):
   def initialize(self):
     self._position = 2 # Starts on 'C'
     self._reach_terminal = False
@@ -50,6 +51,42 @@ class RandomDiscreteWalk( BaseEnvrioment ):
 
     return 0
 
+class Random1000StateWalk(BaseEnvrioment):
+  def initialize(self):
+    self._position = 500 # Starts on 'C'
+    self._reach_terminal = False
+
+  def initialize_states(self):
+    pass
+
+  def initialize_actions(self):
+    pass
+  
+  def state(self):
+    return self._position
+
+  def update_state(self):
+    self._position += np.random.randint(-100, 100+1)
+
+  def is_terminal(self):
+    if self._reach_terminal:
+      return True
+
+    self._reach_terminal = self._position<0 or self._position>=1000
+    return self._reach_terminal
+
+  def reward(self, action):
+    if self.is_terminal():
+      return 0
+
+    self.update_state()
+    if self._position < 1:
+      return -1
+    if self._position > 1000:
+      return 1
+
+    return 0
+  
 class WindyGridWorld(BaseEnvrioment):
   def initialize(self):
     self._player_position = self._start_point
