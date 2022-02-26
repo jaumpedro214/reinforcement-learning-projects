@@ -4,10 +4,12 @@ import numpy as np
 
 class BaseApproximatedMethod(ABC):
     def __init__(self, envrioment, 
-                 featureExtractor,
-                 controlValueApproximator, 
-                 stateValueApproximator, 
-                 discount=1):
+                 control_feature_extractor,
+                 control_value_approximator,
+                 state_feature_extractor=None, 
+                 state_value_approximator=None,
+                 discount=1,
+                 eps=0.0):
         """
         Appriximated Methods base class
 
@@ -15,19 +17,36 @@ class BaseApproximatedMethod(ABC):
         ----------
         envrioment : Object inherits from BaseEnvrioment
             Envrioment from where the method learns
-        featureExtractor : Sklearn-like transformer
-            Method for extracting feature from the envrioment states 
-        functionApproximator : Sklearn-like regressor
-            Method for regressing values and action-values from feature extractors
+        control_feature_extractor : Sklearn-like transformer
+            Method for extracting features from the envrioment state-action pairs
+        control_value_approximator : Sklearn-like regressor
+            Method for regressing action-state values
+        state_feature_extractor : Sklearn-like transformer, optional
+            Method for extracting features from the envrioment states
+        state_value_approximator : Sklearn-like regressor
+            Method for regressing state values
         discount : int, default=1
             Discount factor for future rewards, should be in the interval [0, 1]
+        eps : foat, default=0.0
+            Epsilon value for e-greedy policy
         """
 
         self.envrioment = envrioment
-        self.featureExtractor = featureExtractor
-        self.controlValueApproximator = controlValueApproximator
-        self.stateValueApproximator = stateValueApproximator
+        self.control_feature_extractor = control_feature_extractor
+        self.control_value_approximator = control_value_approximator
+        self.state_feature_extractor = state_feature_extractor
+        self.state_value_approximator = state_value_approximator
         self.discount = discount
+        self.eps = eps
+
+        self.initialize_actions()
+    
+    def initialize_actions(self):
+        """
+        Store internally the envrioment actions
+        """
+        self._actions = self.envrioment.actions
+        self._num_actions = len( self._actions )
 
     @abstractmethod
     def action(self, state):

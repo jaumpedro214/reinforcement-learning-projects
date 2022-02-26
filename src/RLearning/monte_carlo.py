@@ -100,9 +100,34 @@ class MonteCarlo(BaseTabularMethod):
 
 class MonteCarloApproximated(BaseApproximatedMethod):
   def action(self, state):
-    pass
-  
+    
+    # Random action
+    if np.random.uniform() < self.eps:
+      action_id = np.random.randint(0, self._num_actions)
+      return action_id
+
+    try:
+      action_id = self._choose_greedy_action(state)
+    except:
+      action_id = np.random.randint(0, self._num_actions)
+
+    return action_id
+
+  def _choose_greedy_action(self, state):
+    best_action = 0
+    best_value = -np.inf
+    # Choosing action = argmax_(a) q_hat(s, a, w)
+    for action_id in range( self._num_actions ):
+      current_value = self.state_action_value(state, action_id)
+
+      if current_value > best_value:
+        best_value = current_value
+        best_action = action_id
+
+    return best_action
+
   def fit(self, episodes=10):
+
     for episode in range( episodes ):
       self.envrioment.initialize()
       self.simulate()
@@ -132,14 +157,30 @@ class MonteCarloApproximated(BaseApproximatedMethod):
       reward = rewards[time_back]
       action = actions[time_back]
       cumulative_return = cumulative_return*self.discount + reward
+      
+      self._update_state_values( state, cumulative_return )
+      self._update_control_values( state, action, cumulative_return )
+      
+  def _update_state_values(self, state, value):
+    if self.state_feature_extractor==None or self.state_value_approximator==None:
+      return
 
-      # Retrieve state's features and update the regressor
-      state_features = self.featureExtractor.transform( [state] )
-      self.stateValueApproximator.partial_fit( X=state_features, y=[cumulative_return] )
+    state_features = self.state_feature_extractor.transform( [state] )
+    self.state_value_approximator.partial_fit( X=state_features, y=[value] )
   
+  def _update_control_values(self, state, action, value):
+    
+    control_pair = np.hstack( (np.array(state), np.array(action)) )
+    control_features = self.control_feature_extractor.transform( [control_pair] )
+    
+    self.control_value_approximator.partial_fit( X=control_features, y=[value] )
+
   def state_value(self, state):
-    state_features = self.featureExtractor.transform( [state] )
-    return self.stateValueApproximator.predict( state_features )[0]
+    state_features = self.state_feature_extractor.transform( [state] )
+    return self.state_value_approximator.predict( state_features )[0]
   
-  def state_action_value(self):
-    pass
+  def state_action_value(self, state, action):
+    control_pair = np.hstack( [np.array(state), np.array(action)] )
+    control_features = self.control_feature_extractor.transform( [control_pair] )
+
+    return self.control_value_approximator.predict( control_features )

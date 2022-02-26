@@ -60,7 +60,7 @@ class Random1000StateWalk(BaseEnvrioment):
     pass
 
   def initialize_actions(self):
-    pass
+    self.actions = [0]
   
   def state(self):
     return self._position
@@ -142,3 +142,43 @@ class WindyGridWorld(BaseEnvrioment):
   def is_terminal(self):
     return not self._player_in_game
 
+class MontainCar(BaseEnvrioment):
+  def initialize(self):
+    self._position = np.random.uniform( -0.6, -0.4 )
+    self._velocity = 0
+    self._player_in_game = True
+
+  def initialize_actions(self):
+    # Full throttle, Reverse throttle, zero 
+    self.actions = [+1, -1, 0]
+
+  def initialize_states(self):
+    pass
+
+  def state(self):
+    state = [self._position, self._velocity ]
+    return state
+
+  def reward(self, action_id):
+    action = self.actions[action_id]
+    
+    r_reward = -1
+    if self._position >= 0.5:
+      self._player_in_game = False
+      r_reward = 1
+    
+    self._update_state(action)
+    return r_reward
+
+  def _update_state(self, action):
+    self._velocity = self._velocity + 0.001*action - 0.0025*np.cos( 3*self._position )
+    self._velocity = max( min( self._velocity, 0.07 ), -0.07 )
+
+    self._position = self._position+self._velocity
+    self._position = max( min( self._position, 0.51 ), -1.200001 )
+
+    if self._position <= -1.2:
+      self._velocity = 0
+
+  def is_terminal(self):
+    return not self._player_in_game

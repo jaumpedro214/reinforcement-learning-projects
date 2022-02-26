@@ -1,38 +1,6 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
-class TileCoding1D():
-    def __init__(self, n_dimensions=10, limits=[[0,1]], n_tiles=1, tile_shift=None ):
-        """
-        Parameters
-        ----------
-        n_bins : int orlist of int, default=10
-            Number of bins in each original dimension
-        limits : list, default=[[0,1]]
-            Inferior and superior limits for each original dimension
-        TODO n_tiles : int, optional
-            Total number of tiles created. Default is 1.
-        TODO tile_shift : None, optional
-            Space between tiles
-        """
-        self._n_dimensions = n_dimensions
-        self._limits = limits
-    
-    def fit(self, X=None, y=None):
-        self._bins = np.linspace(self._limits[0][0], 
-                                 self._limits[0][1], 
-                                 self._n_dimensions)
-        return self
-
-    def transform(self, X, y=None):
-        X = np.array(X)
-        
-        bin_indexes = np.digitize(X, self._bins, right=True)
-        X_transformed = np.zeros( (len(X), self._n_dimensions+1) )
-        X_transformed[ np.arange(len(X)), bin_indexes ] = 1
-        X_transformed = X_transformed[:, :-1]
-        return X_transformed
-
 class TileCoding():
     def __init__(self, n_bins=[10], limits=[[0,1]], n_tiles=1, tile_shift=[1] ):
         """
@@ -55,11 +23,29 @@ class TileCoding():
         self._tile_shift = tile_shift
 
     def __spacing(self, inferior_lim, superior_lim, n_points):
+        """
+        TODO Function to provide support for multiple spacing functions.
+
+        Parameters
+        ----------
+        inferior_lim : number
+            Inferior limit of the spacing
+        superior_lim : number
+            Superior limit of the spacing
+        n_points : non-negative int
+            Number of points in the spacing
+
+        Returns
+        -------
+        ndarray
+            Spaced numbers over a specified interval.
+        """
         spacing = np.linspace(inferior_lim, superior_lim, n_points)
         return spacing
 
     def fit(self, X=None, y=None):
         """
+        Create the needed variables to perform the transform operation.
 
         Parameters
         ----------
@@ -159,6 +145,22 @@ class TileCoding():
         return X_tile_ohe_transformed
 
     def transform(self, X, y=None):
+        """
+        Transform X in its discretized version
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            Array to be transformed
+        y : Any, optional
+            Not used, just to provide .transform(X,y) support
+
+        Returns
+        -------
+        X_transformed: ndarray, shape (n_samples, total_dimensions)
+            X discretized array. total_dimensions = :math:`n\_tiles\prod_{i} {n\_bins[i]}`
+        """
+        X = np.array(X)
         X_transformed = self.__transform_tile( X, 0 )
         for tile in range(1, self._n_tiles ):
             X_transformed = np.hstack( (X_transformed, self.__transform_tile(X.copy(), tile)) )
