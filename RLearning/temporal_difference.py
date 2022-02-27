@@ -1,4 +1,5 @@
 from RLearning.base.base_tabular_methods import BaseTabularMethod
+from RLearning.base.base_approximated_methods import BaseApproximatedMethod
 import numpy as np
 
 class SARSA(BaseTabularMethod):
@@ -102,3 +103,73 @@ class ExpectedSARSA(SARSA):
                                    )
     
     return (self.state_action_value[state, :]*action_probabilities).sum()
+
+class SARSAApproximated(BaseApproximatedMethod):
+  def action(self, state):
+    # Random action
+    if np.random.uniform() < self.eps:
+      return self._choose_random_action()
+
+    try:
+      return self._choose_greedy_action(state)
+    except:
+      return self._choose_random_action()
+  
+  def fit(self, episodes=10):
+    for episode in range( episodes ):
+      self.envrioment.initialize()
+      self.simulate()
+
+  def simulate(self):
+    
+    current_state = self.envrioment.state()
+    current_action = self.action(current_state)
+
+    while not self.envrioment.is_terminal():
+      reward = self.envrioment.reward(current_action)
+
+      next_state = self.envrioment.state()
+      next_action = self.action(next_state)
+
+      self.state_value_update(reward, current_state, next_state)
+      self.state_action_value_update(current_state, current_action, reward, next_state, next_action)
+      self.policy_improvement(current_state)
+
+      current_state=next_state
+      current_action=next_action
+
+  def policy_improvement(self, state):
+    pass
+
+  def state_value_update(self, reward, current_state, next_state):
+    if self.state_feature_extractor==None or self.state_value_approximator==None:
+      return
+
+    value = self.discount*self.state_value(next_state)
+    state_features = self.state_feature_extractor.transform( [current_state] )
+    self.state_value_approximator.partial_fit( X=state_features, y=[value] )
+
+  def state_value(self, state):
+    state_features = self.state_feature_extractor.transform( [state] )
+
+    try:
+      return self.state_value_approximator.predict( state_features )[0]
+    except:
+      return 0
+
+  def state_action_value_update(self, current_state, current_action, reward, next_state, next_action):
+    td_value = reward + self.discount*self.state_action_value(next_state, next_action)
+    
+    current_control_pair = np.hstack( (np.array(current_state), np.array(current_action)) )
+    current_control_features = self.control_feature_extractor.transform( [current_control_pair] )
+    
+    self.control_value_approximator.partial_fit( X=current_control_features, y=[td_value] )
+
+  def state_action_value(self, state, action):
+    control_pair = np.hstack( [np.array(state), np.array(action)] )
+    control_features = self.control_feature_extractor.transform( [control_pair] )
+
+    try:
+      return self.control_value_approximator.predict( control_features )
+    except:
+      return 0

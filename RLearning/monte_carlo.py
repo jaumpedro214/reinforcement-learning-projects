@@ -100,31 +100,14 @@ class MonteCarlo(BaseTabularMethod):
 
 class MonteCarloApproximated(BaseApproximatedMethod):
   def action(self, state):
-    
     # Random action
     if np.random.uniform() < self.eps:
-      action_id = np.random.randint(0, self._num_actions)
-      return action_id
+      return self._choose_random_action()
 
     try:
-      action_id = self._choose_greedy_action(state)
+      return self._choose_greedy_action(state)
     except:
-      action_id = np.random.randint(0, self._num_actions)
-
-    return action_id
-
-  def _choose_greedy_action(self, state):
-    best_action = 0
-    best_value = -np.inf
-    # Choosing action = argmax_(a) q_hat(s, a, w)
-    for action_id in range( self._num_actions ):
-      current_value = self.state_action_value(state, action_id)
-
-      if current_value > best_value:
-        best_value = current_value
-        best_action = action_id
-
-    return best_action
+      return self._choose_random_action()
 
   def fit(self, episodes=10):
 

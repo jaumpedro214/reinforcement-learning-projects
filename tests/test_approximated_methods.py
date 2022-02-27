@@ -6,6 +6,7 @@ sys.path.append( os.path.join(os.path.dirname(__file__), '..') )
 
 from RLearning.feature_extraction import TileCoding
 from RLearning.monte_carlo import MonteCarloApproximated
+from RLearning.temporal_difference import SARSAApproximated
 from RLearning.envrioments import Random1000StateWalk, MontainCar
 
 from sklearn.linear_model import SGDRegressor
@@ -27,4 +28,21 @@ class TestAppMonteCarlo(unittest.TestCase):
                                                  control_feature_extractor,
                                                  control_value_approximator
                                                )
-        mc_app_learner.fit(episodes=1000)                
+        mc_app_learner.fit(episodes=100)
+
+class TestAppSARSA(unittest.TestCase):
+
+   def test_control_is_working_random_walk(self):
+        envrioment = Random1000StateWalk()
+        control_feature_extractor = TileCoding( n_bins=[10, 2], 
+                                                limits=[ [1, 1000], [0,1] ],
+                                                n_tiles = 1,
+                                                tile_shift=[0,0]
+                                                ).fit()
+        control_value_approximator = SGDRegressor()
+
+        sarsa_app_learner = SARSAApproximated( envrioment,
+                                               control_feature_extractor,
+                                               control_value_approximator
+                                             )
+        sarsa_app_learner.fit(episodes=100)              

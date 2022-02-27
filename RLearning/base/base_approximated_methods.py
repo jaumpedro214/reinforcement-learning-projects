@@ -47,6 +47,22 @@ class BaseApproximatedMethod(ABC):
         """
         self._actions = self.envrioment.actions
         self._num_actions = len( self._actions )
+    
+    def _choose_greedy_action(self, state):
+        best_action = 0
+        best_value = -np.inf
+        # Choosing action = argmax_(a) q_hat(s, a, w)
+        for action_id in range( self._num_actions ):
+            current_value = self.state_action_value(state, action_id)
+
+            if current_value > best_value:
+                best_value = current_value
+                best_action = action_id
+
+        return best_action
+
+    def _choose_random_action(self):
+        return np.random.randint(0, self._num_actions)
 
     @abstractmethod
     def action(self, state):
