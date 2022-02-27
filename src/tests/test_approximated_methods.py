@@ -27,22 +27,4 @@ class TestAppMonteCarlo(unittest.TestCase):
                                                  control_feature_extractor,
                                                  control_value_approximator
                                                )
-        mc_app_learner.fit(episodes=1000)
-
-    def test_control_is_working_montain_car(self):
-        envrioment = MontainCar()
-        control_feature_extractor = TileCoding( n_bins=[8, 8, 3], 
-                                                limits=[ [-1.2, 0.5], 
-                                                         [-0.07, 0.07], 
-                                                         [0, 2] 
-                                                       ],
-                                                n_tiles = 1,
-                                                tile_shift=[0.2125, 0.0175, 0]
-                                                ).fit()
-        control_value_approximator = SGDRegressor()
-
-        mc_app_learner = MonteCarloApproximated( envrioment,
-                                                 control_feature_extractor,
-                                                 control_value_approximator
-                                               )
-        mc_app_learner.fit(episodes=100)                    
+        mc_app_learner.fit(episodes=1000)                

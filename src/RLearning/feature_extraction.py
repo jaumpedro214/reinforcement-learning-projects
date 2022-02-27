@@ -90,7 +90,7 @@ class TileCoding():
         numpy.array
             Discretized array
         """
-        X_dim_transformed = np.digitize( X_dim, bins )
+        X_dim_transformed = np.digitize( X_dim, bins, right=True )
         X_dim_transformed = np.where(X_dim_transformed>=len(bins), 
                                      len(bins)-1, 
                                      X_dim_transformed
