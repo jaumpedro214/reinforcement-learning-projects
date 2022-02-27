@@ -156,7 +156,7 @@ class MontainCar(BaseEnvrioment):
     pass
 
   def state(self):
-    state = [self._position, self._velocity ]
+    state = [ self._position, self._velocity ]
     return state
 
   def reward(self, action_id):
