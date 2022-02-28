@@ -1,11 +1,76 @@
 import numpy as np
 import random
 
-from RLearning.base.base_tabular_methods import BaseTabularMethod
-from RLearning.base.base_approximated_methods import BaseApproximatedMethod
+from RLearning.base.base_methods import BaseMethod
+from RLearning.interfaces import TabularInterface
 
 INFINITY = np.inf
 
+class MonteCarlo( BaseMethod ):
+  def __init__(self, *args, env_interface=TabularInterface(), eps=0.0, **kwargs):
+    """Monte Carlo
+
+    Parameters
+    ----------
+    env_interface : interface, optional
+        Interface between the agent and the envrioment, by default TabularInterface()
+    eps : float, optional
+        Eps probability for eps-greedy policy, by default 0.0
+    """
+    self._eps = eps
+    self.env_interface = env_interface
+    super(MonteCarlo, self).__init__(*args, **kwargs)
+
+  def action( self, state ):
+    if np.random.uniform( 0, 1 ) < self._eps:
+        return self.env_interface.choose_random_action()
+
+    return self.env_interface.choose_greedy_action(state) 
+
+  def fit(self, envrioment):
+    self.env_interface.fit(envrioment)
+
+    for episode in range( self.episodes ):
+      self.env_interface.initialize_envrioment()
+      self.simulate()
+
+  def simulate(self):
+    actions = []
+    states  = []
+    rewards = []
+
+    ## Playing the game
+    time = 0
+    while not self.env_interface.is_terminal():
+      state = self.env_interface.state()
+      action = self.action(state)
+      reward = self.env_interface.reward(action)
+
+      rewards.append( reward )
+      states.append( state )
+      actions.append( action )
+
+      time+=1
+
+    ## Policy Improvement
+    self.policy_improvement( states, rewards, actions )
+
+  def policy_improvement(self, states, rewards, actions):
+    ## Policy evaluation
+    cumulative_return = 0.0
+    for time_back in reversed( range(0, len(rewards)) ):
+      state = states[time_back]
+      reward = rewards[time_back]
+      action = actions[time_back]
+      cumulative_return = cumulative_return*self.discount + reward
+
+      self.env_interface.update_state_value( state, cumulative_return )
+      self.env_interface.update_control_value( state, action, cumulative_return )
+
+      time_back-=1
+
+"""
+DEPRECATED
 class MonteCarlo(BaseTabularMethod):
   def __init__(self, *args, eps=0.0, **kwargs):
     self._eps = eps
@@ -40,7 +105,7 @@ class MonteCarlo(BaseTabularMethod):
 
   def simulate(self):
     actions = []
-    states = []
+    states  = []
     rewards = []
 
     ## Playing the game
@@ -167,3 +232,4 @@ class MonteCarloApproximated(BaseApproximatedMethod):
     control_features = self.control_feature_extractor.transform( [control_pair] )
 
     return self.control_value_approximator.predict( control_features )
+"""

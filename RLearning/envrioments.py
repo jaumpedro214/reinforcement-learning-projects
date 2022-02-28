@@ -13,21 +13,15 @@ class RandomDiscreteWalk(BaseEnvrioment):
     self.terminal_state = 'T'
     self.states.append( self.terminal_state )
 
-    self._id_to_state = dict( enumerate(self.states) ) 
-    self._state_to_id = { state:id for id,state in self._id_to_state.items() }
-
   def initialize_actions(self):
     self.actions = ['NONE']
-    self._id_to_action = dict( enumerate(self.actions) ) 
-    self._action_to_id = { action:id for id,action in self._id_to_action.items() }
 
   def state(self):
     if self._position < 0 or self._position >= len(self.states)-1:
       return self._state_to_id[ self.terminal_state ]
 
     state = self.states[ self._position ]
-    state_id  = self._state_to_id[ state ]
-    return state_id
+    return state
 
   def update_state(self):
     self._position += random.choice( [-1,1] )
