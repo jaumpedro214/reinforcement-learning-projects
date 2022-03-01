@@ -134,6 +134,3 @@ class TestTileCoding(unittest.TestCase):
 
         self.assertEqual( no_zeros_X.max(), n_tiles )
         self.assertEqual( no_zeros_X.max(), no_zeros_X.min() )
-
-if __name__ == '__main__':
-    unittest.main()
