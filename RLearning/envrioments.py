@@ -18,7 +18,7 @@ class RandomDiscreteWalk(BaseEnvrioment):
 
   def state(self):
     if self._position < 0 or self._position >= len(self.states)-1:
-      return self._state_to_id[ self.terminal_state ]
+      return self.terminal_state
 
     state = self.states[ self._position ]
     return state

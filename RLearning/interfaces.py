@@ -39,7 +39,19 @@ class TabularInterface():
     def set_initial_values(self, value):
         self._initializate_values()
         self.state_action_value[ :, : ] = value
-        
+
+    def get_state_value( self, state_id ):
+        return self.state_value[state_id]
+
+    def get_control_value( self, state_id, action_id ):
+        return self.state_action_value[state_id, action_id]
+
+    def get_state_action_values( self, state_id ):
+        return self.state_action_value[state_id, :]
+
+    def get_states_values( self ):
+        return self.state_value
+
     def update_state_value( self, state_id, target ):
         difference = target-self.state_value[state_id]
 

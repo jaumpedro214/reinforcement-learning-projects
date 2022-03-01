@@ -1,82 +1,90 @@
 from RLearning.base.base_tabular_methods import BaseTabularMethod
 from RLearning.base.base_approximated_methods import BaseApproximatedMethod
+
+from RLearning.base.base_methods import BaseMethod
+from RLearning.interfaces import TabularInterface
+
 import numpy as np
 
-class SARSA(BaseTabularMethod):
-  def __init__(self, *args, alpha=0.1, eps=0.1, **kwargs):
-    self._alpha = alpha
+class SARSA(BaseMethod):
+  def __init__(self, *args, env_interface=TabularInterface(), eps=0.0, **kwargs):
+    """SARSA
+
+    Parameters
+    ----------
+    env_interface : interface, optional
+        Interface between the agent and the envrioment, by default TabularInterface()
+    eps : float, optional
+        Eps probability for eps-greedy policy, by default 0.0
+    """
     self._eps = eps
+    self.env_interface = env_interface
     super(SARSA, self).__init__(*args, **kwargs)
 
-  def action(self, state):
-    if np.random.uniform(0, 1) < self._eps:
-      return np.random.randint(0, self._num_actions)
+  def action( self, state ):
+    if np.random.uniform( 0, 1 ) < self._eps:
+        return self.env_interface.choose_random_action()
+    return self.env_interface.choose_greedy_action(state) 
 
-    return self.policy[ state ]
+  def fit(self, envrioment):
+    self.env_interface.fit( envrioment )
 
-  def fit(self, episodes=10):
-    for episode in range(episodes):
-      self.envrioment.initialize()
+    for episode in range( self.episodes ):
+      self.env_interface.initialize_envrioment()
       self.simulate()
-
-    return self
 
   def simulate(self):
     
-    current_state = self.envrioment.state()
+    current_state = self.env_interface.state()
     current_action = self.action(current_state)
 
-    while not self.envrioment.is_terminal():
-      reward = self.envrioment.reward(current_action)
+    while not self.env_interface.is_terminal():
+      reward = self.env_interface.reward(current_action)
 
-      next_state = self.envrioment.state()
+      next_state = self.env_interface.state()
       next_action = self.action(next_state)
 
       self.state_value_update(reward, current_state, next_state)
-      self.state_action_value_update(current_state, current_action, reward, next_state, next_action)
-      self.policy_improvement(current_state)
+      self.control_value_update(current_state, current_action, reward, next_state, next_action)
 
       current_state=next_state
       current_action=next_action
 
   def state_value_update(self, reward, current_state, next_state):
-    td_error = reward+self.discount*self.state_value[next_state]-self.state_value[current_state]
-    self.state_value[current_state] += self._alpha*td_error
-
-  def state_action_value_update(self, current_state, current_action, reward, next_state, next_action):
-    td_error = reward
-    td_error += self.discount*self.state_action_value[next_state][next_action]
-    td_error -= self.state_action_value[current_state][current_action]
-
-    self.state_action_value[current_state][current_action] += self._alpha*td_error
-
-  def policy_improvement(self, state):
-    self.policy[state] = np.argmax( self.state_action_value[state].flatten() )
+    target = reward + self.discount*self.env_interface.get_state_value( next_state )
+    self.env_interface.update_state_value( current_state, target )
+  
+  def control_value_update( self, current_state, current_action, reward, next_state, next_action ):
+    target = reward
+    target += self.discount*self.env_interface.get_control_value( next_state, next_action )
+    self.env_interface.update_control_value( current_state, current_action, target )
 
 class QLearning(SARSA):
   def __init__(self, *args, **kwargs):
     super(QLearning, self).__init__(*args, **kwargs)
 
   def simulate(self):
-    current_state = self.envrioment.state()
-    while not self.envrioment.is_terminal():
+    current_state = self.env_interface.state()
+    while not self.env_interface.is_terminal():
       action = self.action(current_state)
-      reward = self.envrioment.reward(action)
-      next_state = self.envrioment.state()
+      reward = self.env_interface.reward(action)
+      next_state = self.env_interface.state()
 
       self.state_value_update(reward, current_state, next_state)
       self.state_action_value_update(current_state, action, reward, next_state)
-      self.policy_improvement(current_state)
-
       current_state=next_state
 
+  def state_value_update(self, reward, current_state, next_state):
+    target = reward+self.discount*np.max( self.env_interface.get_states_values() )
+    self.env_interface.update_state_value(current_state, target)
+
   def state_action_value_update(self, current_state, action, reward, next_state):
-    td_error = reward
-    td_error += self.discount*np.max( self.state_action_value[next_state][:] )
-    td_error -= self.state_action_value[current_state][action]
+    target = reward
+    target += self.discount*np.max( self.env_interface.get_state_action_values(next_state) )
 
-    self.state_action_value[current_state][action] += self._alpha*td_error
+    self.env_interface.update_control_value( current_state, action, target )
 
+"""
 class ExpectedSARSA(SARSA):
   def __init__(self, *args, **kwargs):
     super(ExpectedSARSA, self).__init__(*args, **kwargs)
@@ -98,78 +106,11 @@ class ExpectedSARSA(SARSA):
     return p
 
   def _expected_state_reward(self, state):
+
     action_probabilities = np.array( [ self._policy_state_action_probability( state, action )
                                        for action in self._actions ]
                                    )
     
     return (self.state_action_value[state, :]*action_probabilities).sum()
 
-class SARSAApproximated(BaseApproximatedMethod):
-  def action(self, state):
-    # Random action
-    if np.random.uniform() < self.eps:
-      return self._choose_random_action()
-
-    try:
-      return self._choose_greedy_action(state)
-    except:
-      return self._choose_random_action()
-  
-  def fit(self, episodes=10):
-    for episode in range( episodes ):
-      self.envrioment.initialize()
-      self.simulate()
-
-  def simulate(self):
-    
-    current_state = self.envrioment.state()
-    current_action = self.action(current_state)
-
-    while not self.envrioment.is_terminal():
-      reward = self.envrioment.reward(current_action)
-
-      next_state = self.envrioment.state()
-      next_action = self.action(next_state)
-
-      self.state_value_update(reward, current_state, next_state)
-      self.state_action_value_update(current_state, current_action, reward, next_state, next_action)
-      self.policy_improvement(current_state)
-
-      current_state=next_state
-      current_action=next_action
-
-  def policy_improvement(self, state):
-    pass
-
-  def state_value_update(self, reward, current_state, next_state):
-    if self.state_feature_extractor==None or self.state_value_approximator==None:
-      return
-
-    value = self.discount*self.state_value(next_state)
-    state_features = self.state_feature_extractor.transform( [current_state] )
-    self.state_value_approximator.partial_fit( X=state_features, y=[value] )
-
-  def state_value(self, state):
-    state_features = self.state_feature_extractor.transform( [state] )
-
-    try:
-      return self.state_value_approximator.predict( state_features )[0]
-    except:
-      return 0
-
-  def state_action_value_update(self, current_state, current_action, reward, next_state, next_action):
-    td_value = reward + self.discount*self.state_action_value(next_state, next_action)
-    
-    current_control_pair = np.hstack( (np.array(current_state), np.array(current_action)) )
-    current_control_features = self.control_feature_extractor.transform( [current_control_pair] )
-    
-    self.control_value_approximator.partial_fit( X=current_control_features, y=[td_value] )
-
-  def state_action_value(self, state, action):
-    control_pair = np.hstack( [np.array(state), np.array(action)] )
-    control_features = self.control_feature_extractor.transform( [control_pair] )
-
-    try:
-      return self.control_value_approximator.predict( control_features )
-    except:
-      return 0
+"""
