@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class BaseMethod(ABC):
-    def __init__(self, episodes=1, discount=1):
+    def __init__(self, episodes=1, discount=1.0):
         self.episodes = episodes
         self.discount = discount
 

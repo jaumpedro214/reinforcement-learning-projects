@@ -37,7 +37,8 @@ class TestTabularInterface(unittest.TestCase):
 
         tabular_interface.reward( 0 )
 
-class testApproximatedInterface(unittest.TestCase):
+class TestApproximatedInterface(unittest.TestCase):
+    
     def test_fit_control(self):
         sgd_reg =  SGDRegressor()
         tc_ext = TileCoding( n_bins=[100, 1], limits=[ [0, 1000+1], [0,0] ], tile_shift=[0,0] )

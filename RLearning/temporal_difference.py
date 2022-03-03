@@ -1,6 +1,3 @@
-from RLearning.base.base_tabular_methods import BaseTabularMethod
-from RLearning.base.base_approximated_methods import BaseApproximatedMethod
-
 from RLearning.base.base_methods import BaseMethod
 from RLearning.interfaces import TabularInterface
 
@@ -84,33 +81,31 @@ class QLearning(SARSA):
 
     self.env_interface.update_control_value( current_state, action, target )
 
-"""
 class ExpectedSARSA(SARSA):
   def __init__(self, *args, **kwargs):
+    """
+    Expected version of SARSA. 
+    Estimates control (S,a) target value considering the expected value of a stochastic eps-greedy policy.
+    
+    """
     super(ExpectedSARSA, self).__init__(*args, **kwargs)
+  
+  def control_value_update( self, current_state, current_action, reward, next_state, next_action ):
+    target = reward
+    target += self.discount*self._expected_reward_state(next_state)
+    self.env_interface.update_control_value( current_state, current_action, target )
 
-  def state_action_value_update(self, current_state, current_action, reward, next_state, next_action):
-    td_error = reward
-    td_error += self.discount*self._expected_state_reward(next_state)
-    td_error -= self.state_action_value[current_state][current_action]
+  def _expected_reward_state( self, state ):
+    probas = np.array( [ self._state_action_proba(state, action) for action in range( len(self.env_interface._actions) ) ] )
+    rewards = np.array( [ self.env_interface.get_control_value(state, action) for action in range( len(self.env_interface._actions) ) ] )
 
-    self.state_action_value[current_state][current_action] += self._alpha*td_error
+    return np.sum( probas*rewards )
 
-  def _policy_state_action_probability(self, state, action):
+  def _state_action_proba(self, state, action):
     # This class is eps-greedy
     # p -> eps/|actions| for non-optimal actions
     # p -> 1-eps + eps/|actions| for the optimal action
-    p = self._eps/self._num_actions
-    if self.policy[state] == action:
+    p = self._eps/len(self.env_interface._actions)
+    if self.env_interface.choose_greedy_action(state) == action:
       p += 1-self._eps
     return p
-
-  def _expected_state_reward(self, state):
-
-    action_probabilities = np.array( [ self._policy_state_action_probability( state, action )
-                                       for action in self._actions ]
-                                   )
-    
-    return (self.state_action_value[state, :]*action_probabilities).sum()
-
-"""

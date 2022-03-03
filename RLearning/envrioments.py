@@ -3,6 +3,36 @@ import random
 import itertools
 import numpy as np
 
+class KBanditsProblem(BaseEnvrioment):
+  def initialize(self):
+    self._reach_terminal = False
+
+  def initialize_states(self):
+    self.states = ['START']
+    self.terminal_state = 'END'
+    self.states.append( self.terminal_state )
+
+  def initialize_actions(self):
+    self.actions = [0, 1, 2, 3]
+
+  def state(self):
+    if self.is_terminal():
+      return 'END'
+
+    return 'START'
+
+  def update_state(self):
+    pass
+
+  def is_terminal(self):
+    return self._reach_terminal
+    
+  def reward(self, action):
+    all_rewards = [np.random.normal( loc=i ) for i in range(4) ]
+    self._reach_terminal = True
+
+    return all_rewards[action]
+
 class RandomDiscreteWalk(BaseEnvrioment):
   def initialize(self):
     self._position = 2 # Starts on 'C'
@@ -135,6 +165,11 @@ class WindyGridWorld(BaseEnvrioment):
 STICK = 0
 HIT = 1
 class SimplifiedBlackjack(BaseEnvrioment):
+  
+  def __init__(self, exploring_starts=True):
+    self._exploring_starts = exploring_starts
+    super(SimplifiedBlackjack, self).__init__()
+
   def draw(self):
     card = np.random.randint( 1, 13+1 ) ## Infinite deck
     # pip cards -> 2 to 10
@@ -153,14 +188,14 @@ class SimplifiedBlackjack(BaseEnvrioment):
       total -= 10
       usable_aces -= 1
     return total, usable_aces
-
+  
   def initialize_exploring_start(self):
     self.dealer_card_up = self.draw()
     self.player_sum = np.random.randint( 12, 21+1 )
     self.player_usable_aces = np.random.randint( 0, 1+1 )
     self._player_in_game = True
 
-  def initialize(self):
+  def initialize_default_start(self):
     self.dealer_card_up = self.draw()
     self.player_sum = 0
     self.player_usable_aces = 0
@@ -173,6 +208,13 @@ class SimplifiedBlackjack(BaseEnvrioment):
                                                                                        card, 
                                                                                        self.player_usable_aces 
                                                                                      )
+
+  def initialize(self):
+    if self._exploring_starts:
+      self.initialize_exploring_start()
+      return
+      
+    self.initialize_default_start()
 
   def initialize_states(self):
     player_sum = [ i for i in range(12, 21+1) ]
@@ -206,7 +248,7 @@ class SimplifiedBlackjack(BaseEnvrioment):
     return dealer_sum
 
   def state(self):
-    if self._player_in_game == False:
+    if not self._player_in_game:
       return self.terminal_state
     
     player_has_usable_ace = int( self.player_usable_aces>0 )

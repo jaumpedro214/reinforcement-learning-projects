@@ -3,7 +3,7 @@ import sys
 import unittest
 
 from RLearning.monte_carlo import MonteCarlo
-from RLearning.temporal_difference import SARSA, QLearning
+from RLearning.temporal_difference import SARSA, QLearning, ExpectedSARSA
 
 from RLearning.interfaces import ApproximatedInterface
 from RLearning.envrioments import RandomDiscreteWalk, Random1000StateWalk
@@ -64,5 +64,21 @@ class TestQLearning( unittest.TestCase ):
         envrioment = Random1000StateWalk()
         qlearning = QLearning( env_interface=app_interface, episodes=100 )
         qlearning.fit( envrioment )
+   
     
+class TestExpectedSARSA( unittest.TestCase ):
+    def test_exp_sarsa_tabular_integration( self ):
+        sarsa = ExpectedSARSA( episodes=100 )
+        envrioment = RandomDiscreteWalk()
 
+        sarsa.fit( envrioment )
+
+    def test_exp_sarsa_app_integration( self ):
+        sgd_reg =  SGDRegressor()
+        tc_ext = TileCoding( n_bins=[100, 1], limits=[ [0, 1000+1], [0,0] ], tile_shift=[0,0] )
+        app_interface = ApproximatedInterface( control_feature_extractor=tc_ext,
+                                               control_value_approximator=sgd_reg
+                                             )
+        envrioment = Random1000StateWalk()
+        sarsa = ExpectedSARSA( env_interface=app_interface, episodes=100 )
+        sarsa.fit( envrioment )
