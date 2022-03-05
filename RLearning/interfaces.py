@@ -10,7 +10,7 @@ class TabularInterface():
         alpha : float, optional
             step-size parameter, by default 0.1
         alpha_decay : str, optional
-            Decaying alpha mode, default is "inverse-state"
+            Decaying alpha mode, default is "inverse-state".
         """
         self.alpha = alpha
         self.alpha_decay = alpha_decay
@@ -83,9 +83,9 @@ class TabularInterface():
             self._state_count[state_id] += 1
             if action_id == None:
                 return 1.0/self._state_count[state_id]
-
             self._state_action_count[state_id][action_id] += 1
             return 1.0/self._state_action_count[state_id][action_id]
+            
         return 1.0
 
     def choose_random_action(self):

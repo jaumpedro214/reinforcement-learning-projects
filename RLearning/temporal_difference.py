@@ -136,16 +136,16 @@ class NStepSarsa(BaseMethod):
   
   def fit(self, envrioment):
     self.env_interface.fit( envrioment )
-
+    self.discounts = np.array( [self.discount**i for i in range(0, self.n_steps+1)], dtype=float )
+    
     for episode in range( self.episodes ):
       self.env_interface.initialize_envrioment()
       self.simulate()
 
   def simulate(self):
-    discounts = np.array( [self.discount**i for i in range(0, self.n_steps+1)] )
-    rewards = np.zeros( self.n_steps+1 )
-    states = []
-    actions = []
+    rewards = np.zeros( self.n_steps+1, dtype=float )
+    states =  [ None ]*( self.n_steps+1 )
+    actions = [ None ]*( self.n_steps+1 )
     time = 0
 
     while not self.env_interface.is_terminal():
@@ -154,13 +154,14 @@ class NStepSarsa(BaseMethod):
       reward = self.env_interface.reward(action)
 
       if time <= self.n_steps:
-        states.append( state )
-        actions.append( action )
-        rewards[time]=reward
+        states[time] = state 
+        actions[time] = action
+        rewards[time] = reward
+        time+=1
         continue
-      
-      self.state_value_update( states[0], rewards, discounts, last_state=states[-1] )
-      self.control_value_update( states[0], actions[0], rewards, discounts, last_state=states[-1], last_action=actions[-1] )
+
+      self.state_value_update( states[0], rewards.copy(), last_state=states[-1] )
+      self.control_value_update( states[0], actions[0], rewards.copy(), last_state=states[-1], last_action=actions[-1] )
       rewards[:-1] = rewards[1:]
       rewards[-1] = reward
 
@@ -174,8 +175,8 @@ class NStepSarsa(BaseMethod):
 
     # Final updates after the episode's ending
     while states[0] != None:
-      self.state_value_update( states[0], rewards, discounts, last_state=states[-1] )
-      self.control_value_update( states[0], actions[0], rewards, discounts, last_state=states[-1], last_action=actions[-1] )
+      self.state_value_update( states[0], rewards.copy(), last_state=states[-1] )
+      self.control_value_update( states[0], actions[0], rewards.copy(), last_state=states[-1], last_action=actions[-1] )
       rewards[:-1] = rewards[1:]
       rewards[-1] = 0
       states[:-1] = states[1:]
@@ -183,14 +184,24 @@ class NStepSarsa(BaseMethod):
       actions[:-1] = actions[1:]
       actions[-1] = None
 
-  def state_value_update(self, state, rewards, discounts, last_state=None):
-    rewards[-1] = self.env_interface.get_state_value( last_state ) if last_state != None else 0
-    target = np.sum(discounts*rewards)
+  def state_value_update(self, state, rewards, last_state=None):
+    if last_state == None:
+      rewards[-1] = 0
+    else:
+      rewards[-1] = self.env_interface.get_state_value( last_state )
 
+    target = (self.discounts*rewards).sum()
     self.env_interface.update_state_value( state, target )
 
-  def control_value_update(self, state, action, rewards, discounts, last_state=None, last_action=None):
-    rewards[-1] = self.env_interface.get_control_value( last_state, last_action ) if last_state != None else 0
-    target = np.sum(discounts*rewards)
+  def control_value_update(self, state, action, rewards, last_state=None, last_action=None):
+    if last_state == None:
+      rewards[-1] = 0
+    else:
+      rewards[-1] = self.env_interface.get_control_value( last_state, last_action )
 
+    target = (self.discounts*rewards).sum()
+    if target > 100:
+      print(rewards)
+      print(self.discounts)
+      
     self.env_interface.update_control_value( state, action, target )
