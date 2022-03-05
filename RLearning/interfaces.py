@@ -196,6 +196,9 @@ class ApproximatedInterface():
         """
         return [0]
 
+    def _approximating_value(self):
+        return self.state_feature_extractor!=None and self.state_value_approximator!=None
+
     def update_state_value(self, state, target ):
         if not self._approximating_value():
             return

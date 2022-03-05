@@ -109,3 +109,88 @@ class ExpectedSARSA(SARSA):
     if self.env_interface.choose_greedy_action(state) == action:
       p += 1-self._eps
     return p
+
+class NStepSarsa(BaseMethod):
+  def __init__(self, *args, env_interface=TabularInterface(), eps=0.0, n_steps=1, **kwargs):
+    """N-Step SARSA
+
+    Parameters
+    ----------
+    env_interface : interface, optional
+        Interface between the agent and the envrioment, by default TabularInterface()
+    eps : float, optional
+        Eps probability for eps-greedy policy, by default 0.0
+    n_steps : int, optional
+        Number of steps ahead the current step to consider when updating the state value, by default 1.
+        Should be greater or equal to 1
+    """
+    self._eps = eps
+    self.env_interface = env_interface
+    self.n_steps = n_steps
+    super(NStepSarsa, self).__init__(*args, **kwargs)
+  
+  def action( self, state ):
+    if np.random.uniform( 0, 1 ) < self._eps:
+        return self.env_interface.choose_random_action()
+    return self.env_interface.choose_greedy_action(state) 
+  
+  def fit(self, envrioment):
+    self.env_interface.fit( envrioment )
+
+    for episode in range( self.episodes ):
+      self.env_interface.initialize_envrioment()
+      self.simulate()
+
+  def simulate(self):
+    discounts = np.array( [self.discount**i for i in range(0, self.n_steps+1)] )
+    rewards = np.zeros( self.n_steps+1 )
+    states = []
+    actions = []
+    time = 0
+
+    while not self.env_interface.is_terminal():
+      state = self.env_interface.state()
+      action = self.action(state)
+      reward = self.env_interface.reward(action)
+
+      if time <= self.n_steps:
+        states.append( state )
+        actions.append( action )
+        rewards[time]=reward
+        continue
+      
+      self.state_value_update( states[0], rewards, discounts, last_state=states[-1] )
+      self.control_value_update( states[0], actions[0], rewards, discounts, last_state=states[-1], last_action=actions[-1] )
+      rewards[:-1] = rewards[1:]
+      rewards[-1] = reward
+
+      states[:-1] = states[1:]
+      states[-1] = state
+
+      actions[:-1] = actions[1:]
+      actions[-1] = action
+
+      time+=1
+
+    # Final updates after the episode's ending
+    while states[0] != None:
+      self.state_value_update( states[0], rewards, discounts, last_state=states[-1] )
+      self.control_value_update( states[0], actions[0], rewards, discounts, last_state=states[-1], last_action=actions[-1] )
+      rewards[:-1] = rewards[1:]
+      rewards[-1] = 0
+      states[:-1] = states[1:]
+      states[-1] = None
+      actions[:-1] = actions[1:]
+      actions[-1] = None
+
+  def state_value_update(self, state, rewards, discounts, last_state=None):
+    rewards[-1] = self.env_interface.get_state_value( last_state ) if last_state != None else 0
+    target = np.sum(discounts*rewards)
+
+    self.env_interface.update_state_value( state, target )
+
+  def control_value_update(self, state, action, rewards, discounts, last_state=None, last_action=None):
+    rewards[-1] = self.env_interface.get_control_value( last_state, last_action ) if last_state != None else 0
+    target = np.sum(discounts*rewards)
+
+    self.env_interface.update_control_value( state, action, target )
