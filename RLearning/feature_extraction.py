@@ -1,6 +1,17 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
+class DummyRepeater():
+    """
+    Has no implementation, just return the recieve vector.
+
+    """
+    def fit(self, X=None, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return X
+
 class TileCoding():
     def __init__(self, n_bins=[10], limits=[[0,1]], n_tiles=1, tile_shift=[1] ):
         """

@@ -4,7 +4,7 @@ import unittest
 
 sys.path.append( os.path.join(os.path.dirname(__file__), '..') )
 
-from RLearning.feature_extraction import TileCoding
+from RLearning.feature_extraction import TileCoding, DummyRepeater
 import numpy as np
 
 class TestTileCoding(unittest.TestCase):
@@ -134,3 +134,14 @@ class TestTileCoding(unittest.TestCase):
 
         self.assertEqual( no_zeros_X.max(), n_tiles )
         self.assertEqual( no_zeros_X.max(), no_zeros_X.min() )
+
+class TestDummyRepeaterr(unittest.TestCase):
+    def test_output_(self):
+        rep_extractor = DummyRepeater()
+        rep_extractor = rep_extractor.fit()
+
+        X = np.array( [[0.5, 1.1], 
+                       [0.1, 20 ],
+                       [0.2, 0.3],] ) 
+
+        self.assertTrue( (X==rep_extractor.transform(X)).all() )
