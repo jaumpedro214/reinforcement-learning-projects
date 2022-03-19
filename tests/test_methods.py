@@ -6,7 +6,7 @@ from RLearning.monte_carlo import MonteCarlo
 from RLearning.temporal_difference import SARSA, QLearning, ExpectedSARSA, NStepSarsa
 
 from RLearning.interfaces import ApproximatedInterface
-from RLearning.envrioments import RandomDiscreteWalk, Random1000StateWalk
+from RLearning.environment import RandomDiscreteWalk, Random1000StateWalk
 
 from sklearn.linear_model import SGDRegressor
 from RLearning.feature_extraction import TileCoding
@@ -103,5 +103,10 @@ class TestNStepSarsa( unittest.TestCase ):
 
     def test_nstep_sarsa_tabular_nsteps_1( self ):
         sarsa = NStepSarsa( episodes=100, n_steps=1 )
+        envrioment = RandomDiscreteWalk()
+        sarsa.fit( envrioment )
+
+    def test_nstep_sarsa_tabular_off_policy( self ):
+        sarsa = NStepSarsa( episodes=100, n_steps=1, off_policy=True, eps=0.1 )
         envrioment = RandomDiscreteWalk()
         sarsa.fit( envrioment )

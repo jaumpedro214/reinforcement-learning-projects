@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict
 
 class TabularInterface():
-    def __init__( self, alpha=1.0, alpha_decay="inverse-state" ):
+    def __init__( self, alpha=1.0, alpha_decay="constant" ):
         """Tabular interface for tabular methods.
 
         Parameters
@@ -10,13 +10,13 @@ class TabularInterface():
         alpha : float, optional
             step-size parameter, by default 0.1
         alpha_decay : str, optional
-            Decaying alpha mode, default is "inverse-state".
+            Decaying alpha mode, default is "constant". Can be some of the options {"inverse-state", "constant"}.
         """
         self.alpha = alpha
         self.alpha_decay = alpha_decay
         
-    def fit( self, envrioment ):
-        self.envrioment = envrioment
+    def fit( self, environment ):
+        self.environment = environment
 
         self._initialize_actions()
         self._initialize_states()
@@ -27,12 +27,12 @@ class TabularInterface():
     
     # Control Methods
     def _initialize_actions(self):
-        self._actions = self.envrioment.actions
+        self._actions = self.environment.actions
         self._id_to_action = dict( enumerate( self._actions ) )
         self._action_to_id = { action:id for id,action in self._id_to_action.items() }
     
     def _initialize_states(self):
-        self._states = self.envrioment.states
+        self._states = self.environment.states
         self._id_to_state = dict( enumerate( self._states ) )
         self._state_to_id = { state:id for id,state in self._id_to_state.items() }
 
@@ -62,18 +62,35 @@ class TabularInterface():
     def get_states_values( self ):
         return self.state_value
 
-    def update_state_value( self, state_id, target ):
+    def update_state_value( self, state_id, target, step_size=None ):
+        if step_size==None:
+            step_size=self._step_size()*self._alpha_decay( state_id )
+
         difference = target-self.state_value[state_id]
-        
-        current_step_size = self._step_size()*self._alpha_decay( state_id )
-
-        self.state_value[state_id] += difference*current_step_size
+        self.state_value[state_id] += difference*step_size
     
-    def update_control_value( self, state_id, action_id, target ):
-        difference = target-self.state_action_value[state_id][action_id]
-        current_step_size = self._step_size()*self._alpha_decay( state_id, action_id )
+    def update_control_value( self, state_id, action_id, target, step_size=None ):
+        """Update the control value of a pair (State, action) towards the target value
+        :math:`v_{new}(s,a) = v_{old}(s,a) + \alpha ( G_{target} - v_{old}(s,a) )`
 
-        self.state_action_value[state_id][action_id] += difference*current_step_size
+        Parameters
+        ----------
+        state_id : int
+            Numerical ID representing the state
+        action_id : int
+            Numerical ID representing the action
+        target : float
+            Target value in the update scheme
+        step_size : float or None, optional
+            Update step size, by default None.
+            When None, uses the actual value of alpha
+        """
+
+        if step_size==None:
+            step_size=self._step_size()*self._alpha_decay( state_id, action_id )
+
+        difference = target-self.state_action_value[state_id][action_id]
+        self.state_action_value[state_id][action_id] += difference*step_size
 
     def _step_size(self):
         return self.alpha
@@ -102,24 +119,24 @@ class TabularInterface():
 
         return self.policy[state_id]
     
-    # Envrioment Interaction Methods
-    def initialize_envrioment(self):
-        self.envrioment.initialize()
+    # environment Interaction Methods
+    def initialize_environment(self):
+        self.environment.initialize()
 
     def state(self):
-        state = self.envrioment.state()
+        state = self.environment.state()
         state_id = self._state_to_id[ state ]
 
         return state_id
 
     def reward(self, action_id):
         action = self._id_to_action[ action_id ]
-        reward = self.envrioment.reward(action)
+        reward = self.environment.reward(action)
 
         return reward
 
     def is_terminal(self):
-        return self.envrioment.is_terminal()
+        return self.environment.is_terminal()
 
 class ApproximatedInterface():
     def __init__(self, 
@@ -134,8 +151,8 @@ class ApproximatedInterface():
         self.state_feature_extractor = state_feature_extractor
         self.state_value_approximator = state_value_approximator
 
-    def fit(self, envrioment ):
-        self.envrioment = envrioment
+    def fit(self, environment ):
+        self.environment = environment
 
         self._initialize_actions()
         self._fit_models()
@@ -149,14 +166,14 @@ class ApproximatedInterface():
         return True
 
     def _initialize_actions(self):
-        self._actions = self.envrioment.actions
+        self._actions = self.environment.actions
         self._id_to_action = dict( enumerate( self._actions ) )
         self._action_to_id = { action:id for id,action in self._id_to_action.items() }
     
     def _fit_models(self):
-        self.initialize_envrioment()
+        self.initialize_environment()
 
-        state = self.envrioment.state()
+        state = self.environment.state()
         action = self.choose_random_action()
 
         if self._approximating_state_value():
@@ -167,7 +184,7 @@ class ApproximatedInterface():
         self.update_state_value( state, 0 )
         self.update_control_value( state, action, 0 )
 
-        self.initialize_envrioment()
+        self.initialize_environment()
 
     ## Control Methods
     def get_state_value(self, state):
@@ -222,15 +239,15 @@ class ApproximatedInterface():
         best_action = self._id_to_action[best_action_id]
         return best_action
 
-    # Envrioment Interaction Methods
-    def initialize_envrioment(self):
-        self.envrioment.initialize()
+    # environment Interaction Methods
+    def initialize_environment(self):
+        self.environment.initialize()
     
     def state(self):
-        return self.envrioment.state()
+        return self.environment.state()
 
     def reward(self, action):
-        return self.envrioment.reward(action)
+        return self.environment.reward(action)
 
     def is_terminal(self):
-        return self.envrioment.is_terminal()
+        return self.environment.is_terminal()

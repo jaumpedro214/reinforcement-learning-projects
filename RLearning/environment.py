@@ -1,9 +1,9 @@
-from RLearning.base.base_envrioment import BaseEnvrioment
+from RLearning.base.base_environment import BaseEnvironment
 import random
 import itertools
 import numpy as np
 
-class KBanditsProblem(BaseEnvrioment):
+class KBanditsProblem(BaseEnvironment):
   def initialize(self):
     self._reach_terminal = False
 
@@ -33,49 +33,7 @@ class KBanditsProblem(BaseEnvrioment):
 
     return all_rewards[action]
 
-class RandomDiscreteWalk(BaseEnvrioment):
-  def initialize(self):
-    self._position = 2 # Starts on 'C'
-    self._reach_terminal = False
-
-  def initialize_states(self):
-    self.states = ['A', 'B', 'C', 'D', 'E']
-    self.terminal_state = 'T'
-    self.states.append( self.terminal_state )
-
-  def initialize_actions(self):
-    self.actions = ['NONE']
-
-  def state(self):
-    if self._position < 0 or self._position >= len(self.states)-1:
-      return self.terminal_state
-
-    state = self.states[ self._position ]
-    return state
-
-  def update_state(self):
-    self._position += random.choice( [-1,1] )
-
-  def is_terminal(self):
-    if self._reach_terminal:
-      return True
-
-    self._reach_terminal = self._position<0 or self._position+1>=len(self.states)
-    return self._reach_terminal
-  
-  def reward(self, action):
-    if self.is_terminal():
-      return 0
-
-    self.update_state()
-    if self._position < 0:
-      return 0
-    if self._position >= len(self.states)-1:
-      return 1
-
-    return 0
-
-class Random1000StateWalk(BaseEnvrioment):
+class Random1000StateWalk(BaseEnvironment):
   def initialize(self):
     self._position = 500 # Starts on 'C'
     self._reach_terminal = False
@@ -111,7 +69,72 @@ class Random1000StateWalk(BaseEnvrioment):
 
     return 0
   
-class WindyGridWorld(BaseEnvrioment):
+class RandomDiscreteWalk( BaseEnvironment ):
+  def __init__( self, n_states=2, step_size=1):
+    self.n_states = n_states
+    self.step_size = step_size
+    super(RandomDiscreteWalk, self).__init__()
+
+  def initialize(self):
+    self._position = self.n_states//2 # Starts on 'C'
+    self._reach_terminal = False
+
+    self.compute_true_solution()
+
+  def initialize_states(self):
+    self.states = [ i for i in range(self.n_states) ]
+    self.terminal_state = -1
+    self.states.append( self.terminal_state )
+
+  def initialize_actions(self):
+    self.actions = ['NONE']
+
+  def compute_true_solution(self):
+    n_states = self.n_states
+    k = self.step_size
+
+    coef_matrix = np.zeros( (n_states,n_states) )
+    inde_vector =  np.zeros( (n_states,) )
+    coef_aux = [ -1 if i==0 else 1.0/(2*k) for i in np.arange( -k, k+1 ) ]
+    coef_aux
+
+    for line in range(n_states):
+        coef_matrix[line][max(0,line-k):min(n_states,line+k+1)] = coef_aux[max(0,k-line):k+1+min(k,n_states-1-line)]
+        inde_vector[line] = -1*max(0,k-line)*(-1)/(2*k) - 1*max(0, k-(n_states-1-line))*(1)/(2*k)
+
+    self.true_state_values = np.linalg.solve( coef_matrix, inde_vector )
+
+    # Appending terminal state
+    self.true_state_values = np.hstack( (self.true_state_values, [0]) )
+
+    return self.true_state_values
+
+  def state(self):
+    self._reach_terminal=self._position<0 or self._position>=self.n_states
+    if self.is_terminal():
+      return self.terminal_state
+    
+    return self._position
+
+  def update_state(self):
+    self._position += np.random.randint(-self.step_size, self.step_size+1)
+
+  def reward(self, action):
+    if self.is_terminal():
+      return 0
+
+    self.update_state()
+    if self._position < 0:
+      return -1
+    if self._position >= self.n_states:
+      return 1
+
+    return 0
+  
+  def is_terminal(self):
+    return self._reach_terminal
+
+class WindyGridWorld(BaseEnvironment):
   def initialize(self):
     self._player_position = self._start_point
     self._player_in_game = True
@@ -164,7 +187,7 @@ class WindyGridWorld(BaseEnvrioment):
 
 STICK = 0
 HIT = 1
-class SimplifiedBlackjack(BaseEnvrioment):
+class SimplifiedBlackjack(BaseEnvironment):
   
   def __init__(self, exploring_starts=True):
     self._exploring_starts = exploring_starts
@@ -289,7 +312,7 @@ class SimplifiedBlackjack(BaseEnvrioment):
   def is_terminal(self):
     return not self._player_in_game
 
-class MontainCar(BaseEnvrioment):
+class MontainCar(BaseEnvironment):
   def initialize(self):
     self._position = np.random.uniform( -0.6, -0.4 )
     self._velocity = 0
@@ -306,8 +329,7 @@ class MontainCar(BaseEnvrioment):
     state = [ self._position, self._velocity ]
     return state
 
-  def reward(self, action_id):
-    action = self.actions[action_id]
+  def reward(self, action):
     
     r_reward = -1
     if self._position >= 0.5:

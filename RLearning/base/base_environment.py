@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-class BaseEnvrioment(ABC):
+class BaseEnvironment(ABC):
   """
-  Base Envrioment class
+  Base environment class
   """
   def __init__(self):
     self.initialize_states()
@@ -12,7 +12,7 @@ class BaseEnvrioment(ABC):
   @abstractmethod
   def initialize(self):
     """
-    Initialize the envrioment variables to simulate a new episode
+    Initialize the environment variables to simulate a new episode
     """
     pass
 
@@ -20,7 +20,7 @@ class BaseEnvrioment(ABC):
   def initialize_states(self):
     """
     If tabular, initialize all possible states
-    If approximated, initialize envrioment's feature construction
+    If approximated, initialize environment's feature construction
     """
     pass
 

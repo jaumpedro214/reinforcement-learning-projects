@@ -5,7 +5,7 @@ import unittest
 sys.path.append( os.path.join(os.path.dirname(__file__), '..') )
 
 from RLearning.interfaces import TabularInterface, ApproximatedInterface
-from RLearning.envrioments import RandomDiscreteWalk, Random1000StateWalk
+from RLearning.environment import RandomDiscreteWalk, Random1000StateWalk
 
 from sklearn.linear_model import SGDRegressor
 from RLearning.feature_extraction import TileCoding
@@ -16,24 +16,24 @@ class TestTabularInterface(unittest.TestCase):
 
     def test_fit(self):
         tabular_interface = TabularInterface()
-        envrioment = RandomDiscreteWalk()
+        environment = RandomDiscreteWalk()
 
-        tabular_interface.fit( envrioment )
+        tabular_interface.fit( environment )
 
     def test_state(self):
         tabular_interface = TabularInterface()
-        envrioment = RandomDiscreteWalk()
+        environment = RandomDiscreteWalk()
 
-        tabular_interface.fit( envrioment )
-        tabular_interface.initialize_envrioment()
+        tabular_interface.fit( environment )
+        tabular_interface.initialize_environment()
         tabular_interface.state()
 
     def test_reward(self):
         tabular_interface = TabularInterface()
-        envrioment = RandomDiscreteWalk()
+        environment = RandomDiscreteWalk()
 
-        tabular_interface.fit( envrioment )
-        tabular_interface.initialize_envrioment()
+        tabular_interface.fit( environment )
+        tabular_interface.initialize_environment()
 
         tabular_interface.reward( 0 )
 
@@ -45,10 +45,10 @@ class TestApproximatedInterface(unittest.TestCase):
         app_interface = ApproximatedInterface( control_feature_extractor=tc_ext,
                                                control_value_approximator=sgd_reg
                                              )
-        envrioment = Random1000StateWalk()
+        environment = Random1000StateWalk()
 
-        app_interface.fit( envrioment )
-        app_interface.initialize_envrioment()
+        app_interface.fit( environment )
+        app_interface.initialize_environment()
 
     def test_state(self):
         sgd_reg =  SGDRegressor()
@@ -56,10 +56,10 @@ class TestApproximatedInterface(unittest.TestCase):
         app_interface = ApproximatedInterface( control_feature_extractor=tc_ext,
                                                control_value_approximator=sgd_reg
                                              )
-        envrioment = Random1000StateWalk()
+        environment = Random1000StateWalk()
 
-        app_interface.fit( envrioment )
-        app_interface.initialize_envrioment()
+        app_interface.fit( environment )
+        app_interface.initialize_environment()
         app_interface.state()
 
     def test_reward(self):
@@ -68,9 +68,9 @@ class TestApproximatedInterface(unittest.TestCase):
         app_interface = ApproximatedInterface( control_feature_extractor=tc_ext,
                                                control_value_approximator=sgd_reg
                                              )
-        envrioment = Random1000StateWalk()
+        environment = Random1000StateWalk()
 
-        app_interface.fit( envrioment )
-        app_interface.initialize_envrioment()
+        app_interface.fit( environment )
+        app_interface.initialize_environment()
         app_interface.reward( 0 )
     

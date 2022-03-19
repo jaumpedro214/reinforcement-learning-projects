@@ -15,12 +15,12 @@ class MonteCarlo( BaseMethod ):
     Parameters
     ----------
     env_interface : interface, optional
-        Interface between the agent and the envrioment, by default TabularInterface()
+        Interface between the agent and the environment, by default TabularInterface()
     eps : float, optional
         Eps probability for eps-greedy policy, by default 0.0
     mode : str, optional
         The algorithm behaviour when updating the values, should be 'first-visit' or 'any-visit'.
-        The 'first-visit' mode only works with Tabular Envrioment.
+        The 'first-visit' mode only works with Tabular environment.
     """
 
     self._eps = eps
@@ -34,12 +34,12 @@ class MonteCarlo( BaseMethod ):
 
     return self.env_interface.choose_greedy_action(state) 
 
-  def fit(self, envrioment):
-    self.env_interface.fit(envrioment)
+  def fit(self, environment):
+    self.env_interface.fit(environment)
     self._create_first_visit_variables()
 
     for episode in range( self.episodes ):
-      self.env_interface.initialize_envrioment()
+      self.env_interface.initialize_environment()
       self.simulate()
 
   def _create_first_visit_variables(self):
